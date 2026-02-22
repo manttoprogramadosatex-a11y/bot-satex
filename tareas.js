@@ -1,48 +1,51 @@
 const axios = require('axios');
 
 // URL DE TU GOOGLE SCRIPT
-const URL_SHEETS = 'https://script.google.com/macros/s/AKfycbyyKVmDdCAuyyDH1GKpZGmwvg0QVm2bPoQa2wEo_BG7I10wgJT-0k82X9seGE_0FuOO/exec'; 
+const URL_SHEETS = 'https://script.google.com/macros/s/AKfycbwdIxH6CYrphy6N9pSeon9HsN6qs3VgNK1mAuyPaCvbKQdUovBjK6KTqHLMav2yp5W6/exec'; 
 
-// Función auxiliar para poner la primera letra en mayúscula
+// Función para que la primera letra siempre sea Mayúscula
 const capitalizar = (texto) => {
     if (!texto) return "";
-    return texto.trim().charAt(0).toUpperCase() + texto.trim().slice(1).toLowerCase();
+    let t = texto.trim();
+    return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
 };
 
 async function procesarComando(textoOriginal, jid, sock) {
-    // Quitamos espacios y pasamos a minúsculas solo para validar el inicio
     const texto = textoOriginal.trim();
     
+    // Validamos 'abrir.' sin importar si el usuario escribió 'Abrir.' o 'abrir.'
     if (texto.toLowerCase().startsWith('abrir.')) {
         const partes = texto.split('.');
         
+        // Si no tiene los 5 elementos (4 puntos), mandamos tu mensaje personalizado
         if (partes.length < 5) {
-            await sock.sendMessage(jid, { text: "⚠️ *Formato incorrecto*\nUsa: abrir.maquina.noMq.falla.cantidad" });
+            const errorMsg = "❌ *Formato Incorrecto.*\n\nUsa: Abrir.Tipo de Máquina.#de Máquina.Falla o problema.#de Falla reportada.";
+            await sock.sendMessage(jid, { text: errorMsg });
             return;
         }
 
-        // Procesamos los datos con la primera letra en mayúscula
-        const datosProcesados = {
-            maquina: capitalizar(partes[1]), // Ejemplo: "prensa" -> "Prensa"
-            noMq: partes[2].trim(),
-            falla: capitalizar(partes[3]),   // Ejemplo: "electrica" -> "Electrica"
-            cantidad: partes[4].trim(),
-            telefono: jid.split('@')[0]
-        };
-
         try {
-            console.log(`📡 Enviando a Sheets:`, datosProcesados);
+            // Procesamos los datos para que lleguen limpios a Excel
+            const datosParaEnviar = {
+                maquina: capitalizar(partes[1]),
+                noMq: partes[2].trim(),
+                falla: capitalizar(partes[3]),
+                cantidad: partes[4].trim(),
+                telefono: jid.split('@')[0]
+            };
+
+            console.log(`📡 Enviando a Satex Sheets:`, datosParaEnviar);
             
-            const respuesta = await axios.post(URL_SHEETS, datosProcesados);
+            const respuesta = await axios.post(URL_SHEETS, datosParaEnviar);
             const res = respuesta.data;
 
-            const mensajeFinal = `✅ *ORDEN GENERADA*\n\n🆔 *OS:* ${res.idOS}\n🛠️ *Máquina:* ${datosProcesados.maquina}\n👤 *Técnico:* ${res.nombreTecnico}\n📅 *Estado:* Registrado en Satex`;
+            const mensajeExito = `✅ *ORDEN GENERADA*\n\n🆔 *OS:* ${res.idOS}\n🛠️ *Máquina:* ${datosParaEnviar.maquina}\n👤 *Técnico:* ${res.nombreTecnico}\n📅 *Estado:* Registrado en Satex`;
             
-            await sock.sendMessage(jid, { text: mensajeFinal });
+            await sock.sendMessage(jid, { text: mensajeExito });
 
         } catch (error) {
-            console.error("❌ Error Sheets:", error.message);
-            await sock.sendMessage(jid, { text: "❌ *Error de conexión*\nNo se pudo guardar en Google Sheets." });
+            console.error("❌ Error en conexión:", error.message);
+            await sock.sendMessage(jid, { text: "❌ *Error de sistema*\nNo se pudo conectar con la base de datos de Satex." });
         }
     }
 }
