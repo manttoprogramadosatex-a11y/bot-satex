@@ -1,54 +1,50 @@
 const axios = require('axios');
-
-const URL_SHEETS = 'https://script.google.com/macros/s/AKfycbxSSG01O7hNG24HmzYZbJAOqbxnkh_Y63qW6ZAJnP6RXs_wtn3bOY5wgLaPSCQGX8Xr/exec'; 
+const URL_SHEETS = 'https://script.google.com/macros/s/AKfycbxXUwkeVl5dmZwIn-psIjqYtRBhGImYoVRR13I6sFOBOt7hCcQhNsCW9DSyUKa3HLGk/exec'; 
 
 const corregirMayusculas = (texto) => {
     if (!texto) return "";
-    return texto.trim().toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    let t = texto.split('@')[0].trim(); // Ignora todo después del @
+    return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
 };
 
 async function procesarComando(msg, sock) {
     const textoOriginal = (msg.message.conversation || msg.message.extendedTextMessage?.text || "");
-    const texto = textoOriginal.trim();
-    
-    // El 'JID' es la dirección del chat (puede ser un grupo o un chat privado)
-    const jidDestino = msg.key.remoteJid;
-    // El 'Participante' es la persona real que escribió (en grupos)
-    const autorMensaje = msg.key.participant || msg.key.remoteJid;
+    const jid = msg.key.remoteJid;
+    const partes = textoOriginal.split('.');
 
-    if (texto.toLowerCase().startsWith('abrir.')) {
-        const partes = texto.split('.');
-        
-        if (partes.length < 5) {
-            const errorMsg = "❌ *Formato Incorrecto.*\n\nUsa: Abrir.Tipo de Máquina.#de Máquina.Falla o problema.#de Falla reportada.";
-            await sock.sendMessage(jidDestino, { text: errorMsg });
-            return;
-        }
-
+    // --- COMANDO ABRIR ---
+    if (partes[0].toLowerCase() === 'abrir' && partes.length >= 4) {
         try {
-            // Extraemos solo los números del teléfono del autor
-            const numeroLimpio = autorMensaje.split('@')[0].split(':')[0];
-
             const datos = {
+                accion: "abrir",
                 maquina: corregirMayusculas(partes[1]),
                 noMq: partes[2].trim(),
-                falla: corregirMayusculas(partes[3]),
-                cantidad: partes[4].trim(),
-                telefono: numeroLimpio
+                falla: corregirMayusculas(partes[3])
             };
 
-            const respuesta = await axios.post(URL_SHEETS, datos);
-            const res = respuesta.data;
+            const res = (await axios.post(URL_SHEETS, datos)).data;
+            const msj = `✅ *ORDEN GENERADA*\n\n🆔 *OS:* ${res.os}\n🛠️ *Máquina:* ${res.maquina}\n📅 *Estado:* Reg. en Bitácora`;
+            await sock.sendMessage(jid, { text: msj });
+        } catch (e) { await sock.sendMessage(jid, { text: "❌ Error al abrir OS" }); }
+    }
 
-            const msj = `✅ *ORDEN GENERADA*\n\n🆔 *OS:* ${res.idOS}\n🛠️ *Máquina:* ${datos.maquina}\n👤 *Técnico:* ${res.nombreTecnico}\n📅 *Estado:* Registrado en Satex`;
-            
-            // Enviamos la respuesta al mismo chat de origen
-            await sock.sendMessage(jidDestino, { text: msj });
+    // --- COMANDO CERRAR ---
+    // Estructura: Cerrar.N-OS.Iniciales.Acciones
+    if (partes[0].toLowerCase() === 'cerrar' && partes.length >= 4) {
+        try {
+            const datos = {
+                accion: "cerrar",
+                os: partes[1].trim(),
+                iniciales: partes[2].trim().toLowerCase(),
+                acciones: partes[3].split('@')[0].trim()
+            };
 
-        } catch (e) {
-            console.log("Error en Sheets:", e.message);
-            await sock.sendMessage(jidDestino, { text: "❌ Error de conexión con Satex Sheets." });
-        }
+            const res = (await axios.post(URL_SHEETS, datos)).data;
+            if (res) {
+                const msj = `🔒 *OS FINALIZADA*\n\n🆔 *OS:* ${res.os}\n👤 *Técnico:* ${res.tecnico}\n✅ *Estado:* Cerrada en Bitácora`;
+                await sock.sendMessage(jid, { text: msj });
+            }
+        } catch (e) { await sock.sendMessage(jid, { text: "❌ Error al cerrar OS. Verifica el número." }); }
     }
 }
 module.exports = { procesarComando };
