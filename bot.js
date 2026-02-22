@@ -2,27 +2,30 @@ const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion,
 const qrcode = require('qrcode');
 const express = require('express');
 const pino = require('pino');
-const { procesarComando } = require('./tareas'); 
+const { procesarComando } = require('./tareas');
+const fs = require('fs');
 
 const app = express();
 const port = process.env.PORT || 10000;
 let qrActual = null;
 let conectado = false;
 
+// Esta ruta servirá para ver el QR o el estado
 app.get('/', async (req, res) => {
     if (conectado) {
-        res.send('<html><body style="background:#000;color:#0f0;text-align:center;padding-top:50px;font-family:sans-serif;"><h1>✅ BOT CONECTADO</h1><p>Ya puedes cerrar esta ventana.</p></body></html>');
+        res.send('<html><body style="background:#000;color:#0f0;text-align:center;padding-top:50px;"><h1>✅ BOT CONECTADO</h1></body></html>');
     } else if (qrActual) {
         const qrImagen = await qrcode.toDataURL(qrActual);
-        res.send(`<html><body style="background:#000;color:white;text-align:center;padding-top:50px;font-family:sans-serif;"><h1>Escanea el QR para Satex</h1><img src="${qrImagen}" style="border:10px solid white;width:300px;"/><p>El QR se actualiza solo cada 30 segundos.</p></body></html>`);
+        res.send(`<html><body style="background:#000;color:white;text-align:center;padding-top:50px;"><img src="${qrImagen}" style="width:300px;border:10px solid white;"/><h2>Escanea para Satex</h2></body></html>`);
     } else {
-        res.send('<html><body style="background:#000;color:white;text-align:center;padding-top:50px;"><h1>Generando QR...</h1><p>Espera 10 segundos y recarga la página.</p></body></html>');
+        res.send('<html><body style="background:#000;color:white;text-align:center;padding-top:50px;"><h2>Iniciando... Recarga en 10 seg.</h2></body></html>');
     }
 });
 
 app.listen(port, () => { console.log('🚀 Servidor iniciado'); iniciarWhatsApp(); });
 
 async function iniciarWhatsApp() {
+    // Usamos la carpeta local, pero el truco es que NUNCA la borraremos manualmente
     const { state, saveCreds } = await useMultiFileAuthState('./sesion_satex');
     const { version } = await fetchLatestBaileysVersion();
     
@@ -30,8 +33,7 @@ async function iniciarWhatsApp() {
         version, 
         auth: state, 
         logger: pino({ level: 'silent' }), 
-        browser: ['Satex Bot', 'Chrome', '1.0.0'],
-        printQRInTerminal: true 
+        browser: ['Satex Bot', 'Chrome', '1.0.0'] 
     });
 
     sock.ev.on('creds.update', saveCreds);
@@ -39,11 +41,7 @@ async function iniciarWhatsApp() {
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect, qr } = update;
         if (qr) { qrActual = qr; conectado = false; }
-        if (connection === 'open') { 
-            qrActual = null; 
-            conectado = true; 
-            console.log('✅ BOT CONECTADO'); 
-        }
+        if (connection === 'open') { qrActual = null; conectado = true; console.log('✅ BOT CONNECTED'); }
         if (connection === 'close') {
             conectado = false;
             const debieraReconectar = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
