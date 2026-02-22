@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 // URL DE TU GOOGLE APPS SCRIPT
-const URL_SHEETS = 'https://script.google.com/macros/s/AKfycbwdIxH6CYrphy6N9pSeon9HsN6qs3VgNK1mAuyPaCvbKQdUovBjK6KTqHLMav2yp5W6/exec'; 
+const URL_SHEETS = 'https://script.google.com/macros/s/AKfycbyyKVmDdCAuyyDH1GKpZGmwvg0QVm2bPoQa2wEo_BG7I10wgJT-0k82X9seGE_0FuOO/exec'; 
 
 async function procesarComando(textoOriginal, jid, sock) {
     console.log(`📩 Mensaje recibido de ${jid}: ${textoOriginal}`); // ESTO APARECERÁ EN RENDER
