@@ -50,10 +50,11 @@ async function iniciarWhatsApp() {
         const msg = messages[0];
         if (!msg.message || msg.key.fromMe) return;
 
-        // EXTRAE EL NÚMERO DEL USUARIO REAL (PARTICIPANTE)
-        const idUsuario = msg.key.participant || msg.key.remoteJid;
+        const chatDondeResponde = msg.key.remoteJid; // El grupo o chat privado
+        const personaQueEscribe = msg.key.participant || msg.key.remoteJid; // El número personal
         const texto = (msg.message.conversation || msg.message.extendedTextMessage?.text || "");
         
-        await procesarComando(texto, idUsuario, sock);
+        // Pasamos ambos datos a tareas.js
+        await procesarComando(texto, personaQueEscribe, chatDondeResponde, sock);
     });
 }
