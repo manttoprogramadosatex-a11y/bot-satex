@@ -11,19 +11,18 @@ let conectado = false;
 
 app.get('/', async (req, res) => {
     if (conectado) {
-        res.send('<html><body style="background:#000;color:#0f0;text-align:center;padding-top:50px;font-family:sans-serif;"><h1>✅ BOT VINCULADO Y ACTIVO</h1><p>Ya puedes cerrar esta pestaña.</p></body></html>');
+        res.send('<html><body style="background:#000;color:#0f0;text-align:center;padding-top:50px;"><h1>✅ BOT SATEX ACTIVO</h1></body></html>');
     } else if (qrActual) {
         const qrImagen = await qrcode.toDataURL(qrActual);
-        res.send(`<html><body style="background:#000;color:white;text-align:center;padding-top:50px;font-family:sans-serif;"><h1>Vincular WhatsApp Satex</h1><img src="${qrImagen}" style="border:10px solid white;width:300px;"/><p>Escanea este código para iniciar sesión.</p></body></html>`);
+        res.send(`<html><body style="background:#000;color:white;text-align:center;padding-top:50px;"><img src="${qrImagen}" style="width:300px;border:10px solid white;"/><h2>Escanea para Vincular</h2></body></html>`);
     } else {
-        res.send('<html><body style="background:#000;color:white;text-align:center;padding-top:50px;"><h1>Generando QR...</h1><p>Recarga la página en 5 segundos.</p></body></html>');
+        res.send('<html><body style="background:#000;color:white;text-align:center;padding-top:50px;"><h2>Iniciando... Recarga en 5 seg.</h2></body></html>');
     }
 });
 
-app.listen(port, () => { console.log('🚀 Servidor iniciado en puerto ' + port); iniciarWhatsApp(); });
+app.listen(port, () => { console.log('🚀 Servidor iniciado'); iniciarWhatsApp(); });
 
 async function iniciarWhatsApp() {
-    // La carpeta 'sesion_satex' guardará tu conexión
     const { state, saveCreds } = await useMultiFileAuthState('./sesion_satex');
     const { version } = await fetchLatestBaileysVersion();
     
@@ -31,28 +30,18 @@ async function iniciarWhatsApp() {
         version, 
         auth: state, 
         logger: pino({ level: 'silent' }), 
-        browser: ['Satex System', 'Safari', '1.0.0'] 
+        browser: ['Satex System', 'Chrome', '1.0.0'] 
     });
 
     sock.ev.on('creds.update', saveCreds);
 
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect, qr } = update;
-        if (qr) { qrActual = qr; conectado = false; console.log('⚠️ Esperando escaneo de QR...'); }
-        if (connection === 'open') { 
-            qrActual = null; 
-            conectado = true; 
-            console.log('✅ BOT CONNECTED - WhatsApp listo'); 
-        }
+        if (qr) { qrActual = qr; conectado = false; }
+        if (connection === 'open') { qrActual = null; conectado = true; console.log('✅ BOT CONECTADO'); }
         if (connection === 'close') {
             conectado = false;
-            const debieraReconectar = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
-            if (debieraReconectar) {
-                console.log('🔄 Reconectando...');
-                iniciarWhatsApp();
-            } else {
-                console.log('❌ Sesión cerrada. Borra la carpeta sesion_satex y reinicia para nuevo QR.');
-            }
+            if (lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut) iniciarWhatsApp();
         }
     });
 
@@ -60,7 +49,11 @@ async function iniciarWhatsApp() {
         if (type !== 'notify') return;
         const msg = messages[0];
         if (!msg.message || msg.key.fromMe) return;
+
+        // EXTRAE EL NÚMERO DEL USUARIO REAL (PARTICIPANTE)
+        const idUsuario = msg.key.participant || msg.key.remoteJid;
         const texto = (msg.message.conversation || msg.message.extendedTextMessage?.text || "");
-        await procesarComando(texto, msg.key.remoteJid, sock);
+        
+        await procesarComando(texto, idUsuario, sock);
     });
 }
