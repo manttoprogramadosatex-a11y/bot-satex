@@ -11,12 +11,12 @@ let conectado = false;
 
 app.get('/', async (req, res) => {
     if (conectado) {
-        res.send('<html><body style="background:#000;color:#0f0;text-align:center;padding-top:50px;font-family:sans-serif;"><h1>✅ BOT SATEX ACTIVO</h1><p>Conectado correctamente.</p></body></html>');
+        res.send('<html><body style="background:#000;color:#0f0;text-align:center;padding-top:50px;font-family:sans-serif;"><h1>✅ BOT SATEX ACTIVO</h1></body></html>');
     } else if (qrActual) {
         const qrImagen = await qrcode.toDataURL(qrActual);
-        res.send(`<html><body style="background:#000;color:white;text-align:center;padding-top:50px;font-family:sans-serif;"><h1>Vincular Satex</h1><img src="${qrImagen}" style="width:300px;border:10px solid white;"/><p>Escanea para iniciar sesión.</p></body></html>`);
+        res.send(`<html><body style="background:#000;color:white;text-align:center;padding-top:50px;font-family:sans-serif;"><h1>Vincular WhatsApp</h1><img src="${qrImagen}" style="width:300px;border:10px solid white;"/><p>Escanea para conectar el Bot.</p></body></html>`);
     } else {
-        res.send('<html><body style="background:#000;color:white;text-align:center;padding-top:50px;"><h2>Iniciando servidor...</h2></body></html>');
+        res.send('<html><body style="background:#000;color:white;text-align:center;padding-top:50px;"><h2>Iniciando... Recarga en 5 segundos.</h2></body></html>');
     }
 });
 
@@ -49,10 +49,8 @@ async function iniciarWhatsApp() {
         if (type !== 'notify') return;
         const msg = messages[0];
         if (!msg.message || msg.key.fromMe) return;
-
-        const texto = (msg.message.conversation || msg.message.extendedTextMessage?.text || "");
         
-        // Ejecutamos la lógica enviando el objeto 'sock' completo
-        await procesarComando(texto, msg, sock);
+        // Pasamos el mensaje completo y la conexión a la lógica de tareas
+        await procesarComando(msg, sock);
     });
 }
