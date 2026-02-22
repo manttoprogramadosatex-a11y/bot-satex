@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 // URL DE TU GOOGLE SCRIPT
-const URL_SHEETS = 'https://script.google.com/macros/s/AKfycbyyKVmDdCAuyyDH1GKpZGmwvg0QVm2bPoQa2wEo_BG7I10wgJT-0k82X9seGE_0FuOO/exec'; 
+const URL_SHEETS = 'https://script.google.com/macros/s/AKfycbzC8XcfioEeM6KRyCxg7KEdnkzvCV0E8AdnL8Zcntjy1LEIkKY9MHT_eJWfbQvXGhOf/exec'; 
 
 // Función para que la primera letra siempre sea Mayúscula
 const capitalizar = (texto) => {
