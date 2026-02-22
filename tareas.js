@@ -1,34 +1,37 @@
 const axios = require('axios');
 
-// URL DE TU GOOGLE APPS SCRIPT
+// REEMPLAZA ESTA URL POR LA DE TU GOOGLE SCRIPT ACTUALIZADO
 const URL_SHEETS = 'https://script.google.com/macros/s/AKfycbyyKVmDdCAuyyDH1GKpZGmwvg0QVm2bPoQa2wEo_BG7I10wgJT-0k82X9seGE_0FuOO/exec'; 
 
 async function procesarComando(textoOriginal, jid, sock) {
-    console.log(`📩 Mensaje recibido de ${jid}: ${textoOriginal}`); // ESTO APARECERÁ EN RENDER
-
-    if (textoOriginal.toLowerCase().startsWith('abrir.')) {
-        const partes = textoOriginal.split('.');
+    const texto = textoOriginal.trim();
+    
+    if (texto.toLowerCase().startsWith('abrir.')) {
+        const partes = texto.split('.');
+        
         if (partes.length < 5) {
-            await sock.sendMessage(jid, { text: "❌ Formato incorrecto. Usa: abrir.maquina.noMq.falla.cantidad" });
+            await sock.sendMessage(jid, { text: "⚠️ *Formato incorrecto*\nUsa: abrir.maquina.noMq.falla.cantidad" });
             return;
         }
 
         try {
+            console.log(`📡 Enviando datos a Google: ${texto}`);
             const respuesta = await axios.post(URL_SHEETS, {
-                maquina: partes[1].trim(),
-                noMq: partes[2].trim(),
-                falla: partes[3].trim(),
-                cantidad: partes[4].trim(),
+                maquina: partes[1],
+                noMq: partes[2],
+                falla: partes[3],
+                cantidad: partes[4],
                 telefono: jid.split('@')[0]
             });
 
             const res = respuesta.data;
-            const mensaje = `🛠️ *OS GENERADA:* ${res.idOS}\n📌 *Máquina:* ${partes[1]}\n👤 *Asignado:* ${res.nombreTecnico}\n✅ Reporte guardado con éxito.`;
+            const mensajeFinal = `✅ *ORDEN GENERADA*\n\n🆔 *OS:* ${res.idOS}\n🛠️ *Máquina:* ${partes[1]}\n👤 *Técnico:* ${res.nombreTecnico}\n📅 *Estado:* Registrado en Satex`;
             
-            await sock.sendMessage(jid, { text: mensaje });
-        } catch (e) { 
-            console.log("Error en Sheets:", e.message);
-            await sock.sendMessage(jid, { text: "⚠️ Error al conectar con Google Sheets." });
+            await sock.sendMessage(jid, { text: mensajeFinal });
+
+        } catch (error) {
+            console.error("❌ Error Sheets:", error.message);
+            await sock.sendMessage(jid, { text: "❌ *Error de conexión*\nNo se pudo guardar en Google Sheets. Revisa el Script." });
         }
     }
 }
