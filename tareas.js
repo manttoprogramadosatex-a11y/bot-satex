@@ -1,5 +1,5 @@
 const axios = require('axios');
-const URL_SHEETS = 'https://script.google.com/macros/s/AKfycbzGs-EURtoi-prZ0B_endUgs3jYf4HqUCkQp63ldNsPsvK3mUJ0Lb9nAQav45cth3At/exec'; 
+const URL_SHEETS = 'https://script.google.com/macros/s/AKfycbwD0IRs5PcUNMGoMcT0UIY2PsZR1zZKa_maQquNXegKUSPBq9KH3W5ah3LglYopfv5g/exec'; 
 
 const limpiar = (t) => t ? t.split('@')[0].trim() : "";
 
@@ -8,7 +8,6 @@ async function procesarComando(msg, sock) {
     const jid = msg.key.remoteJid;
     const partes = textoOriginal.split('.');
 
-    // --- COMANDO ABRIR ---
     if (partes[0].toLowerCase() === 'abrir' && partes.length >= 4) {
         try {
             const res = (await axios.post(URL_SHEETS, {
@@ -18,13 +17,11 @@ async function procesarComando(msg, sock) {
                 falla: limpiar(partes[3])
             })).data;
 
-            // EL CAMBIO ESTÁ AQUÍ: Orden visual para el mensaje de WhatsApp
-            const msj = `✅ *ORDEN GENERADA*\n\n🆔 *OS:* ${res.os}\n🛠️ *Máquina:* ${res.maquinaNom}\n🔢 *# Maq.:* ${res.maquinaNum}\n📅 *Estado:* Reg. en Bitácora`;
+            const msj = `✅ *OS GENERADA*\n\n🆔 *OS:* ${res.os}\n🛠️ *Máquina:* ${res.maquinaNom}\n🔢 *# Maq.:* ${res.maquinaNum}\n📅 *Estado:* Reg. en Bitácora`;
             await sock.sendMessage(jid, { text: msj });
-        } catch (e) { console.log("Error Abrir:", e); }
+        } catch (e) { console.log(e); }
     }
 
-    // --- COMANDO CERRAR ---
     if (partes[0].toLowerCase() === 'cerrar' && partes.length >= 4) {
         try {
             const res = (await axios.post(URL_SHEETS, {
@@ -38,7 +35,7 @@ async function procesarComando(msg, sock) {
                 const msj = `🔒 *OS FINALIZADA*\n\n🆔 *OS:* ${res.os}\n👤 *Técnico:* ${res.tecnico}\n⏱️ *Tiempo Transcurrido:* ${res.tiempo}\n✅ *Estado:* Cerrada en Bitácora`;
                 await sock.sendMessage(jid, { text: msj });
             }
-        } catch (e) { console.log("Error Cerrar:", e); }
+        } catch (e) { console.log(e); }
     }
 }
 module.exports = { procesarComando };
