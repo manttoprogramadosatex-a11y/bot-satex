@@ -11,12 +11,12 @@ let conectado = false;
 
 app.get('/', async (req, res) => {
     if (conectado) {
-        res.send('<html><body style="background:#000;color:#0f0;text-align:center;padding-top:50px;"><h1>✅ BOT SATEX ACTIVO</h1></body></html>');
+        res.send('<html><body style="background:#000;color:#0f0;text-align:center;padding-top:50px;font-family:sans-serif;"><h1>✅ BOT SATEX ACTIVO</h1><p>Conectado correctamente.</p></body></html>');
     } else if (qrActual) {
         const qrImagen = await qrcode.toDataURL(qrActual);
-        res.send(`<html><body style="background:#000;color:white;text-align:center;padding-top:50px;"><img src="${qrImagen}" style="width:300px;border:10px solid white;"/><h2>Escanea para Vincular</h2></body></html>`);
+        res.send(`<html><body style="background:#000;color:white;text-align:center;padding-top:50px;font-family:sans-serif;"><h1>Vincular Satex</h1><img src="${qrImagen}" style="width:300px;border:10px solid white;"/><p>Escanea para iniciar sesión.</p></body></html>`);
     } else {
-        res.send('<html><body style="background:#000;color:white;text-align:center;padding-top:50px;"><h2>Iniciando... Recarga en 5 seg.</h2></body></html>');
+        res.send('<html><body style="background:#000;color:white;text-align:center;padding-top:50px;"><h2>Iniciando servidor...</h2></body></html>');
     }
 });
 
@@ -50,11 +50,9 @@ async function iniciarWhatsApp() {
         const msg = messages[0];
         if (!msg.message || msg.key.fromMe) return;
 
-        const chatDondeResponde = msg.key.remoteJid; // El grupo o chat privado
-        const personaQueEscribe = msg.key.participant || msg.key.remoteJid; // El número personal
         const texto = (msg.message.conversation || msg.message.extendedTextMessage?.text || "");
         
-        // Pasamos ambos datos a tareas.js
-        await procesarComando(texto, personaQueEscribe, chatDondeResponde, sock);
+        // Ejecutamos la lógica enviando el objeto 'sock' completo
+        await procesarComando(texto, msg, sock);
     });
 }
